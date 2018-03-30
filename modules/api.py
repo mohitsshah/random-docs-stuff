@@ -52,3 +52,10 @@ class API(object):
         payload = {"name": name}
         req = requests.post(url, headers={"Content-Type": "application/json"}, data=json.dumps(payload))
         return req.status_code, json.loads(req.content)
+
+    def get_prediction(self, id, name):
+        url = self.base_url + 'predict'
+        print("Making request to: ", url)
+        payload = {"name": name, "id": id}
+        req = requests.post(url, headers={"Content-Type": "application/json"}, data=json.dumps(payload))
+        return req.status_code, json.loads(req.content)

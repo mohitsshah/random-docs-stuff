@@ -42,8 +42,22 @@ class Document(object):
         text = '\n'.join([p.get_lines() for p in self.pages])
         return text
 
-    def get_tags(self):
-        return self.doc["categories"]
+    def get_tags(self, predict=False, name=None):
+        if not predict:
+            return self.doc["categories"]
+        else:
+            if name is None:
+                return None
+            from .classifier import Classifier
+            text = self.get_text()
+            if len(text) == 0:
+                return None
+            clf = Classifier()
+            status, data = clf.run(text, name)
+            if status:
+                return data
+            else:
+                return None
 
     def set_tags(self, tag):
         from .api import API

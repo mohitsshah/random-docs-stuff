@@ -2,6 +2,8 @@ import os
 import json
 import subprocess
 from .database import Database
+from .document import Document
+from .classifier import Classifier
 
 configs_dir = './models'
 
@@ -66,3 +68,28 @@ class ModelConfig(object):
             return True, "Training %s complete." % name
         else:
             return False, "Error: %s" % status
+
+    def predict(self, id, name):
+        db = Database()
+        obj = db.fetch_model(name)
+        status = obj["status"]
+        if status != "COMPLETE":
+            return False, "Model %s not trained." % name
+        obj, status = db.fetch_document(id)
+        if obj is None:
+            return False, "Document %s does not exist." % id
+        if status != "COMPLETE":
+            return False, "Document %s is not processed." % id
+        json_path = os.path.join(obj['processed_path'], id + '.json')
+        with open(json_path, 'r') as fi:
+            obj['content'] = json.loads(fi.read())
+        try:
+            doc = Document(obj)
+            text = doc.get_text()
+        except Exception as e:
+            return False, "Error processing Document %s" % id
+        if len(text) == 0:
+            return False, "Unknown error"
+        clf = Classifier()
+        status, data = clf.run(text, name)
+        return status, data

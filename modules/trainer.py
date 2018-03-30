@@ -16,12 +16,12 @@ from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.pipeline import Pipeline
 from sklearn.metrics import classification_report, confusion_matrix
+import utils
 
 
 class Trainer(object):
     def __init__(self, name):
         self.name = name
-
 
     @staticmethod
     def get_configs(name):
@@ -50,10 +50,7 @@ class Trainer(object):
                         data['content'] = json.loads(fi.read())
                     doc = Document(data)
                     text = doc.get_text()
-                    t = re.sub(strings, ' ', text)
-                    tokens = [t.rstrip().lstrip() for t in t.split()]
-                    tokens = [t.lower() for t in tokens if len(t) > 0]
-                    text = ' '.join(tokens)
+                    text = utils.preprocess_text(text)
                     texts.append(text)
                     labels.append(i)
 
@@ -102,7 +99,7 @@ class Trainer(object):
 
     def write_confusion_matrix(self, true, pred, tags, label='test'):
         confusion = self.get_confusion_matrix(true, pred, tags)
-        with open(os.path.join('./models', self.name, label+'_confusion.txt'), 'w') as fi:
+        with open(os.path.join('./models', self.name, label + '_confusion.txt'), 'w') as fi:
             headers = ['']
             headers.extend(tags)
             fi.write('\t'.join(headers))

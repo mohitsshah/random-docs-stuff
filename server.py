@@ -167,6 +167,27 @@ def train_status():
         return response
 
 
+@app.route('/predict', methods=['POST'])
+def get_prediction():
+    data = request.get_json(force=True)
+    if 'name' not in data:
+        response = jsonify({"message": "Name is required."})
+        response.status_code = 500
+        return response
+    name = data["name"]
+    if 'id' not in data:
+        response = jsonify({"message": "Document ID is required."})
+        response.status_code = 500
+        return response
+    id = data["id"]
+    status, message = configs.predict(id, name)
+    if status:
+        return jsonify({"message": message})
+    else:
+        response = jsonify({"message": message})
+        response.status_code = 500
+        return response
+
 if __name__ == '__main__':
     try:
         app.run(debug=True, port=int(port_code))
