@@ -1,0 +1,15 @@
+models
+processed
+uploads
+test_docs
+database
+css
+*.pdf
+.idea
+.ipynb_checkpoints
+old_scripts
+.DS_Store
+*.pyc
+*.py~
+*.*~
+*~
