@@ -36,6 +36,10 @@ class Trainer(object):
         tags = os.listdir(data_dir)
         if params["tags"] is not None:
             tags = params["tags"].split(";")
+        if "unclassified" in tags:
+            tags.remove("unclassified")
+        if len(tags) < 2:
+            return None
         db = Database()
         texts = []
         labels = []
@@ -45,15 +49,17 @@ class Trainer(object):
             for id in ids:
                 data, status = db.fetch_document(id)
                 if data:
-                    json_path = os.path.join(data['processed_path'], data['id'] + '.json')
-                    with open(json_path, 'r') as fi:
-                        data['content'] = json.loads(fi.read())
-                    doc = Document(data)
-                    text = doc.get_text()
-                    text = utils.preprocess_text(text)
-                    texts.append(text)
-                    labels.append(i)
-
+                    try:
+                        json_path = os.path.join(data['processed_path'], data['id'] + '.json')
+                        with open(json_path, 'r') as fi:
+                            data['content'] = json.loads(fi.read())
+                        doc = Document(data)
+                        text = doc.get_text()
+                        text = utils.preprocess_text(text)
+                        texts.append(text)
+                        labels.append(i)
+                    except Exception as e:
+                        pass
         train_x, test_x, train_y, test_y = train_test_split(texts, labels, test_size=params["split"])
         return train_x, test_x, train_y, test_y, tags
 
@@ -114,10 +120,15 @@ class Trainer(object):
     def train(self):
         try:
             configs = self.get_configs(self.name)
-            train_x, test_x, train_y, test_y, tags = self.make_dataset(configs["dataset"])
+            dataset = self.make_dataset(configs["dataset"])
+            if not dataset:
+                db = Database()
+                db.update_training_status(self.name, "Dataset Error")
+                return
+            train_x, test_x, train_y, test_y, tags = dataset
             input_rep = self.make_input(configs["input"])
             clf = self.make_classifier(configs["classifier"])
-            if input_rep and clf:
+            if (input_rep is not None) and (clf is not None):
                 input_rep.fit(train_x)
                 train_feats = input_rep.transform(train_x)
                 test_feats = input_rep.transform(test_x)
